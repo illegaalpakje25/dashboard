@@ -1,7 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "npm test",
-  "functions": {"api/index.mjs": {"maxDuration": 60}},
-  "routes": [{"src": "/(.*)", "dest": "/api/index.mjs"}]
+  "buildCommand": "npm test && node -e \"const fs=require('node:fs');fs.mkdirSync('public',{recursive:true});fs.writeFileSync('public/robots.txt','User-agent: *\\nDisallow: /\\n')\"",
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.mjs"
+    }
+  ],
+  "outputDirectory": "public"
 }
