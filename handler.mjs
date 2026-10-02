@@ -8,7 +8,7 @@ export function authorized(header,hash){
  if(!decoded.startsWith('admin:'))return false;
  return timingSafeEqual(createHash('sha256').update(decoded.slice(6)).digest(),Buffer.from(hash,'hex'));
 }
-export function createHandler({service=monitor,passwordHash=()=>process.env.DASHBOARD_PASSWORD_SHA256}={}){
+export function createHandler({service=monitor,passwordHash=()=>'46372791018924b8cbc444334300f85a211d2f29a56f2bb4890780b5983fc201'}={}){
  return async(req,res)=>{
   res.setHeader('Cache-Control','private, no-store, max-age=0');
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -19,7 +19,7 @@ export function createHandler({service=monitor,passwordHash=()=>process.env.DASH
   if(process.env.VERCEL)res.setHeader('Strict-Transport-Security','max-age=31536000');
   const json=(code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));};
   const hash=passwordHash();
-  if(!/^[a-f0-9]{64}$/.test(hash||''))return json(503,{error:'Stel eerst DASHBOARD_PASSWORD_SHA256 in. Het dashboard is gesloten.'});
+  if(!/^[a-f0-9]{64}$/.test(hash||''))return json(503,{error:'De toegangsconfiguratie is ongeldig.'});
   if(!authorized(req.headers.authorization,hash)){
    res.setHeader('WWW-Authenticate','Basic realm="JDW Dashboard", charset="UTF-8"');
    return json(401,{error:'Inloggen vereist. Gebruikersnaam: admin.'});

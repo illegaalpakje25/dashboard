@@ -44,3 +44,12 @@ test('unlock rejects cross-site requests and handles both Vercel parsed and loca
  assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers,body:'invalid'})).status,400);
  assert.equal(count,2);
 });
+
+test('owner-selected PIN works without an environment password hash; wrong PIN stays rejected',async()=>{
+ const handler=createHandler({service:{status:async()=>({ok:true})}});
+ const pinHeader='Basic '+Buffer.from('admin:1025').toString('base64');
+ assert.equal((await call(handler,'/api/status',{headers:{authorization:pinHeader}})).status,200);
+ const wrongHeader='Basic '+Buffer.from('admin:0000').toString('base64');
+ assert.equal((await call(handler,'/api/status',{headers:{authorization:wrongHeader}})).status,401);
+ assert.equal((await call(handler,'/api/status')).status,401);
+});

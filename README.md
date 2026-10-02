@@ -7,12 +7,11 @@ Privé-dashboard voor jdw-content.nl, jdwtrackside.com en pm-tuning.nl. Met bere
 1. Importeer `illegaalpakje25/dashboard` in Vercel als nieuw project.
 2. Framework: **Other**. Root Directory: **./**. Laat de instellingen uit `vercel.json` staan. Node.js 22.
 3. Voeg onderstaande Environment Variables toe voor Production en, als je previews gebruikt, ook Preview. De waarden staan in het afzonderlijke lokale bestand `PRIVATE-vercel-setup.txt`; upload dit bestand nooit naar GitHub.
-   - `DASHBOARD_PASSWORD_SHA256`: hash van het gegenereerde dashboardwachtwoord.
    - `PM_MONITOR_TOKEN`: leessleutel van de PM Tuning-monitor.
    - `PM_MONITOR_ACTION_TOKEN`: afzonderlijke deblokkeersleutel.
-4. Klik Deploy. De browser vraagt om gebruikersnaam **admin** en het gegenereerde wachtwoord. Het wachtwoord zelf hoort niet in Vercel of GitHub; alleen de hash.
+4. Klik Deploy. De browser vraagt om gebruikersnaam **admin** en de afgesproken pincode in het wachtwoordveld. Er is geen DASHBOARD_PASSWORD_SHA256-variabele meer nodig.
 
-Zonder geldige wachtwoordhash blijft alles gesloten (503). Alle pagina's, bestanden en API-routes vereisen HTTP Basic-authenticatie. Vercel gebruikt HTTPS. Gebruik lokaal alleen localhost. Sluit de privésessie van je browser om opgeslagen Basic-authenticatie te wissen. Bij wijzigen van de hash moet je opnieuw deployen; oude inloggegevens werken daarna niet meer.
+De toegang gebruikt de door de eigenaar gekozen vaste pincode. Dit is een eenvoudige toegangsrem, geen sterke beveiliging: een korte pincode is makkelijk te raden. Alle pagina's, bestanden en API-routes vereisen HTTP Basic-authenticatie. Vercel gebruikt HTTPS. Gebruik lokaal alleen localhost. Sluit de privésessie van je browser om opgeslagen Basic-authenticatie te wissen. Een bestaande DASHBOARD_PASSWORD_SHA256-variabele wordt niet meer gebruikt.
 
 ## Controle-interval en historie
 
