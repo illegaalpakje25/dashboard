@@ -34,7 +34,10 @@ test('unlock rejects cross-site requests and handles both Vercel parsed and loca
  const headers={authorization,'content-type':'application/json'};
  assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers,body:'{}'})).status,403);
  assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers:{...headers,origin:'https://evil.example'},body:'{}'})).status,403);
- headers.origin='http://localhost:3001';
+ const protocol=process.env.VERCEL?'https':'http';
+ headers.origin=`${protocol}://localhost:3001`;
+ const wrongProtocol=process.env.VERCEL?'http':'https';
+ assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers:{...headers,origin:`${wrongProtocol}://localhost:3001`},body:'{}'})).status,403);
  for(const data of [{body:'{"id":"test"}'},{parsed:{id:'test'}}])assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers,...data})).status,200);
  assert.equal(count,2);
  assert.equal((await call(handler,'/api/pm/unlock',{method:'POST',headers,body:'x'.repeat(1025)})).status,413);
