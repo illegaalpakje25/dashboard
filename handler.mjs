@@ -33,13 +33,13 @@ export function createHandler({service=monitor,passwordHash=()=>'46372791018924b
   try{
    if(path==='/api/status'&&req.method==='GET')return json(200,await service.status());
    if(path==='/api/refresh'&&req.method==='POST'){await service.status(true);return json(200,{ok:true});}
-   if(path==='/api/pm/unlock'&&req.method==='POST'){
+   if(['/api/pm/unlock','/api/pm/revoke-session'].includes(path)&&req.method==='POST'){
     if(!req.headers['content-type']?.startsWith('application/json'))return json(415,{error:'JSON vereist.'});
     let body='',size=0;
     if(req.body!==undefined){body=typeof req.body==='string'?req.body:JSON.stringify(req.body);if(Buffer.byteLength(body)>1024)return json(413,{error:'Aanvraag te groot.'});}
     else for await(const chunk of req){size+=Buffer.byteLength(chunk);if(size>1024)return json(413,{error:'Aanvraag te groot.'});body+=chunk;}
     let input;try{input=JSON.parse(body)}catch{return json(400,{error:'Ongeldige aanvraag.'});}
-    const result=await service.unlock(input);return json(result.status,result.body);
+    const result=await (path.endsWith('/revoke-session')?service.revoke(input):service.unlock(input));return json(result.status,result.body);
    }
    const asset=assets[path];
    if(req.method==='GET'&&asset){res.writeHead(200,{'Content-Type':`${asset[0]}; charset=utf-8`});return res.end(asset[1]);}

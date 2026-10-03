@@ -2,7 +2,7 @@ import http from 'node:http';
 import https from 'node:https';
 import tls from 'node:tls';
 import dns from 'node:dns/promises';
-import {getPmActivity,unlockPmBlock} from './pm-activity.mjs';
+import {getPmActivity,unlockPmBlock,revokePmSession} from './pm-activity.mjs';
 const domains=['jdw-content.nl','jdwtrackside.com','pm-tuning.nl'];
 function request(url,redirects=0,deadline=Date.now()+12000){return new Promise((resolve,reject)=>{
  const start=performance.now();const u=new URL(url);
@@ -33,3 +33,5 @@ export async function status(force=false){
  try{return await pending;}finally{pending=null;}
 }
 export async function unlock(input){const result=await unlockPmBlock(input);if(result.status===200)snapshot=null;return result;}
+
+export async function revoke(input){const result=await revokePmSession(input);if(result.status===200)snapshot=null;return result;}

@@ -28,6 +28,8 @@ export function validateMonitor(data) {
   const validDetails=row=>['username','ip','city','region','country'].every(k=>row[k]===null||typeof row[k]==='string');
   if(!Array.isArray(blocks)||blocks.some(b=>!b||!/^[a-f0-9]{64}$/.test(b.id)||!Number.isSafeInteger(b.startedAt)||b.startedAt<=0||!validDate(b.expiresAt)||!Number.isSafeInteger(b.failures)||b.failures<5||!validDetails(b)))throw Error('Ongeldige blokkades');
   if(!Array.isArray(unlocks)||unlocks.length>100||unlocks.some(r=>!validDate(r.at)||!(r.ip===null||typeof r.ip==='string')||!(r.username===null||typeof r.username==='string')))throw Error('Ongeldige deblokkeergeschiedenis');
+  const sessions=data.sessions??[];
+  if(!Array.isArray(sessions)||sessions.length>100||sessions.some(r=>!r||!/^[a-f0-9]{64}$/.test(r.id)||!validDate(r.createdAt)||!validDate(r.lastSeenAt)||!validDate(r.expiresAt)||!validDetails(r)))throw Error('Ongeldige sessies');
   // Whitelist fields: never pass an upstream response or credential through to the browser.
   return {
     login: { status:'connected', since:login.since, total:login.total, successful:login.successful, failed:login.failed, blocked:login.blocked, lastAttemptAt:login.lastAttemptAt },
@@ -35,6 +37,9 @@ export function validateMonitor(data) {
     lastPhotoAdded: data.lastPhotoAdded ? { at:data.lastPhotoAdded.at, title:data.lastPhotoAdded.title.slice(0,200) } : null,
     attempts: attempts.map(row=>({at:row.at,outcome:row.outcome,username:row.username?.slice(0,128)||null,ip:row.ip?.slice(0,64)||null,
       city:row.city?.slice(0,64)||null,region:row.region?.slice(0,64)||null,country:row.country?.slice(0,2)||null})),
+    sessionsAvailable:Array.isArray(data.sessions),
+    canRevokeSession:data.capabilities?.revokeSession===true&&(process.env.PM_MONITOR_ACTION_TOKEN?.length??0)>=32,
+    sessions:sessions.map(r=>({id:r.id,createdAt:r.createdAt,lastSeenAt:r.lastSeenAt,expiresAt:r.expiresAt,...Object.fromEntries(['username','ip','city','region','country'].map(k=>[k,r[k]?.slice(0,128)||null]))})),
     blocksAvailable:Array.isArray(data.activeBlocks),
     canUnblock:data.capabilities?.unlock===true && (process.env.PM_MONITOR_ACTION_TOKEN?.length??0)>=32,
     activeBlocks:blocks.map(b=>({id:b.id,startedAt:b.startedAt,expiresAt:b.expiresAt,failures:b.failures,username:b.username?.slice(0,128)||null,ip:b.ip?.slice(0,64)||null,city:b.city?.slice(0,64)||null,region:b.region?.slice(0,64)||null,country:b.country?.slice(0,2)||null})),
@@ -81,4 +86,14 @@ export async function getPmActivity(request, { token = process.env.PM_MONITOR_TO
     gallery = { status: 'error', latest: null, count: null, error: 'De galerijgegevens konden niet worden opgehaald.' };
   }
   return { ...await privateActivity, gallery };
+}
+
+export async function revokePmSession(input,{token=process.env.PM_MONITOR_ACTION_TOKEN,fetcher=fetch}={}){
+ if(!/^[a-f0-9]{64}$/.test(input?.id||''))return {status:400,body:{error:'Ongeldige sessie.'}};
+ if(!token||token.length<32)return {status:503,body:{error:'Actiesleutel ontbreekt.'}};
+ try{
+  const r=await fetcher('https://pm-tuning.nl/api/monitor/revoke-session',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({id:input.id}),redirect:'error',signal:AbortSignal.timeout(10000)});
+  if(!r.ok)throw Error();const data=await r.json();if(data.ok!==true)throw Error();
+  return {status:200,body:{ok:true,alreadyEnded:data.alreadyEnded===true}};
+ }catch{return {status:502,body:{error:'Uitloggen niet bevestigd. Vernieuw het overzicht en probeer opnieuw.'}};}
 }

@@ -53,3 +53,12 @@ test('owner-selected PIN works without an environment password hash; wrong PIN s
  assert.equal((await call(handler,'/api/status',{headers:{authorization:wrongHeader}})).status,401);
  assert.equal((await call(handler,'/api/status')).status,401);
 });
+
+test('session revocation requires login and same origin before the action is called',async()=>{
+ let calls=0;const handler=createHandler({passwordHash:()=>hash,service:{revoke:async input=>{calls++;assert.equal(input.id,'a'.repeat(64));return {status:200,body:{ok:true}};}}});
+ const headers={authorization,'content-type':'application/json',origin:(process.env.VERCEL?'https':'http')+'://localhost:3001'};
+ const body=JSON.stringify({id:'a'.repeat(64)});
+ assert.equal((await call(handler,'/api/pm/revoke-session',{method:'POST',body})).status,401);
+ assert.equal((await call(handler,'/api/pm/revoke-session',{method:'POST',headers:{...headers,origin:'https://example.org'},body})).status,403);
+ assert.equal(calls,0);assert.equal((await call(handler,'/api/pm/revoke-session',{method:'POST',headers,body})).status,200);assert.equal(calls,1);
+});
